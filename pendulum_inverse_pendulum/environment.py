@@ -16,7 +16,7 @@ def default_config() -> config_dict.ConfigDict:
     return config_dict.create(
         ctrl_dt=0.02,           # control frequency
         sim_dt=0.002,           # physics frequency (10 substeps)
-        episode_length=500,     # 10 seconds per episode
+        episode_length=250,     # 10 seconds per episode
         action_repeat=1,
         action_scale=1.0,
         input_shape=8,          # 6-dimensional observation space
@@ -279,7 +279,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
     def step(self, state, action):
         return self._step(state, action)
 
-    def _step_impl(self, state, action):
+    def _step_impl(self, state, action, automatic_reset=False):
         ctrl = jp.clip(action * self._config.action_scale, self._lowers, self._uppers)
         model = state.info["model"]
         data = mjx_env.step(model, state.data, ctrl, self.n_substeps)
