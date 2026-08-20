@@ -26,7 +26,7 @@ def default_config() -> config_dict.ConfigDict:
             scales=config_dict.create(
                 upright=1.0,        # Tip height reward
                 control_cost=-0.01, # Penalize large torques
-                velocity_cost=-0.002, # Penalize fast swinging
+                velocity_cost=-0.004, # Penalize fast swinging
                 continuity_cost=-0.2, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
             ),
         ),
