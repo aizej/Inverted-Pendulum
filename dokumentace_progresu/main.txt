@@ -1,0 +1,68 @@
+2026_8_2: the learning proces goes wrong every time the reward seems to go up,
+and the agent is close to solwing the policy:
+The value loss spikes, the weight update also spikes a bit and the reward absolutely plumits.
+Then everything repeats when the reward rises.
+
+trying to fix by clipping the action before making logprobs
+didnt work
+
+tried making the tensors torch tensors before passing to policy:
+
+states = torch.tensor(np.concatenate(states, 0), dtype=torch.float32, device=device)
+raw_actions = torch.tensor(np.concatenate(raw_actions, 0), dtype=torch.float32, device=device)
+old_log_probs = torch.tensor(np.concatenate(old_log_probs, 0), dtype=torch.float32, device=device)
+advantages = torch.tensor(np.concatenate(advantages, 0), dtype=torch.float32, device=device)
+old_values = torch.tensor(np.concatenate(old_values, 0), dtype=torch.float32, device=device)
+returns = torch.tensor(advantages + old_values, dtype=torch.float32, device=device)  # raw returns, compute BEFORE normalizing
+didnt work
+
+
+improved the reward function to:
+upright_reward = (jp.cos(data.qpos[self._joint_qids[0]]) + 2*jp.cos(data.qpos[self._joint_qids[1]] + data.qpos[self._joint_qids[0]] - jp.pi))/3
+bettet but not fixed?  lr=3e-4*10
+policy loss seems to get squed when the plicy colapses (advantages seem to stay normal)
+
+set adam optimizer epsilon to 1e-5
+
+
+
+
+
+tried bigger entropy loss term
+
+changed std clipping to 1e-2 from 1e-5
+removed std max clipp this seams to helped the logstd actualy move (the logstd needed to move up first and then it could move down)
+this fixed the std not moving 
+
+
+
+
+added value clipping
+this seems to have fixed the issue
+
+
+
+
+changing upright_reward = (jp.cos(data.qpos[self._joint_qids[0]]) + 2*jp.cos(data.qpos[self._joint_qids[1]] + data.qpos[self._joint_qids[0]] - jp.pi))/3
+to upright_reward = ((-2*jp.abs(jp.sin(data.qpos[self._joint_qids[0]]/2))+1)
+                    + 2*(-2*jp.abs(jp.sin(data.qpos[self._joint_qids[1]]/2 + data.qpos[self._joint_qids[0]]/2 - jp.pi/2)) + 1))/3
+for sharper reward when the env is almost solved
+
+
+
+added continuity reward (to smooth out the output of the network)
+continuity_cost * self._config.reward_config.scales.continuity_cost
+seems to help while the policy controls hardware
+
+!!! the continuity cost cant be too high or the action will colapse to 0 solving the continuity (good value seems to be <-0.05, -0.2>)
+
+
+
+changed the episode leangth to 250 actions = 5 seconds for faster learning
+
+changed the motor torque according to the measurements:
+<actuator>
+    <motor name="torque1" joint="joint1" gear="1" ctrlrange="-0.064 0.064"/>  # torque measured 8g over 0.08m rod equals 0.064 N-m
+  </actuator>
+
+
