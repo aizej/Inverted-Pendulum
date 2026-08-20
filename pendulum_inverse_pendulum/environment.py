@@ -16,7 +16,7 @@ def default_config() -> config_dict.ConfigDict:
     return config_dict.create(
         ctrl_dt=0.02,           # control frequency
         sim_dt=0.002,           # physics frequency (10 substeps)
-        episode_length=250,     # 10 seconds per episode
+        episode_length=500,     # 5 seconds per episode
         action_repeat=1,
         action_scale=1.0,
         input_shape=8,          # 6-dimensional observation space
