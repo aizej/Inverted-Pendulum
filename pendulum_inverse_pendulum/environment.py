@@ -14,9 +14,9 @@ from mujoco import mjx
 
 def default_config() -> config_dict.ConfigDict:
     return config_dict.create(
-        ctrl_dt=0.02,           # control frequency
-        sim_dt=0.002,           # physics frequency (10 substeps)
-        episode_length=500,     # 5 seconds per episode
+        ctrl_dt=0.002,           # control frequency
+        sim_dt=0.001,           # physics frequency (10 substeps)
+        episode_length=2500,     # 5 seconds per episode
         action_repeat=1,
         action_scale=1.0,
         input_shape=8,          # 6-dimensional observation space
@@ -223,7 +223,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         info["obs_history"] = history
 
         
-        lags = jp.array([0])           # indexes of the history to return (0 = most recent, 1 = one step ago, etc.)
+        lags = jp.array([1])           # indexes of the history to return (0 = most recent, 1 = one step ago, etc.)
         idx = self.HIST_LEN - 1 - lags
         stacked = history[idx]                    
         return stacked.reshape(-1)
