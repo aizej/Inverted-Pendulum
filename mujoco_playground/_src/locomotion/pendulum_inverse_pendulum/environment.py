@@ -33,8 +33,8 @@ def default_config() -> config_dict.ConfigDict:
         obs_noise=config_dict.create(
             level=1.0,
             scales=config_dict.create(
-                joint_pos=0.04,
-                joint_vel=0.08,
+                joint_pos=0.02,
+                joint_vel=0.05,
             ),
         ),
         naconmax=50,
