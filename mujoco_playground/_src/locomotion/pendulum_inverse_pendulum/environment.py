@@ -166,7 +166,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
             ctrl=jp.zeros(self._mjx_model.nu),
         )
 
-        info = {"rng": rng, "step": jp.zeros(()), "model": model}
+        info = {"lag_ratio" : jax.random.uniform(rng),"rng": rng, "step": jp.zeros(()), "model": model}
         first_raw = self._raw_obs(data, info)
         info["obs_history"] = jp.tile(first_raw, (self.HIST_LEN, 1))   # (HIST_LEN, obs_dim)
         metrics = {f"reward/{k}": jp.zeros(()) for k in self._config.reward_config.scales}
@@ -225,7 +225,13 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         
         lags = jp.array([1])           # indexes of the history to return (0 = most recent, 1 = one step ago, etc.)
         idx = self.HIST_LEN - 1 - lags
-        stacked = history[idx]                    
+        #stacked = history[idx]
+
+        
+        
+        r = info["lag_ratio"]
+        stacked = r*history[idx] + (1-r)*history[idx-1]    
+
         return stacked.reshape(-1)
 
     
