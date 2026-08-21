@@ -25,7 +25,7 @@ def default_config() -> config_dict.ConfigDict:
         reward_config=config_dict.create(
             scales=config_dict.create(
                 upright=1.0,        # Tip height reward
-                control_cost=-0.01, # Penalize large torques
+                control_cost=-0.02, # Penalize large torques
                 velocity_cost=-0.004, # Penalize fast swinging
                 continuity_cost=-0.2, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
             ),
@@ -279,14 +279,20 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
     def step(self, state, action):
         return self._step(state, action)
 
+    def upright_func(phi):
+        return jp.cos(phi)
+        #return -2*jp.abs(jp.sin(phi/2)) +1
+
     def _step_impl(self, state, action, automatic_reset=False):
         ctrl = jp.clip(action * self._config.action_scale, self._lowers, self._uppers)
         model = state.info["model"]
         data = mjx_env.step(model, state.data, ctrl, self.n_substeps)
 
         
-        upright_reward = ((-2*jp.abs(jp.sin(data.qpos[self._joint_qids[0]]/2))+1)
-                           + 2*(-2*jp.abs(jp.sin(data.qpos[self._joint_qids[1]]/2 + data.qpos[self._joint_qids[0]]/2 - jp.pi/2)) + 1))/3
+        phi0 = data.qpos[self._joint_qids[0]]
+        phi1 = data.qpos[self._joint_qids[1]]
+        upright_reward = (self.upright_func(phi0) + 2*self.upright_func(phi0 + phi1 + jp.pi ))/3
+
 
         control_cost   = jp.sum(jp.square(action))
         velocity_cost  = jp.sum(jp.square(data.qvel[self._joint_dqids]))
