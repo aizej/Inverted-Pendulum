@@ -229,7 +229,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         idx = self.HIST_LEN - 1 - lags
         #stacked = history[idx]
 
-        
+        #observation delay wia interpolation between curr state and one behind (works only on continuous obs and if the delay is smaller than obs time step)
         high = self._config.obs_noise.observation_delay_max / self._config.ctrl_dt
         low = self._config.obs_noise.observation_delay_min  / self._config.ctrl_dt
         r = info["lag_ratio"]*(high-low) + low
@@ -289,8 +289,8 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         return self._step(state, action)
 
     def upright_func(self, phi):
-        return jp.cos(phi)
-        #return -2*jp.abs(jp.sin(phi/2)) +1
+        #return jp.cos(phi)
+        return -2*jp.abs(jp.sin(phi/2)) +1
 
     def _step_impl(self, state, action, automatic_reset=False):
         ctrl = jp.clip(action * self._config.action_scale, self._lowers, self._uppers)
