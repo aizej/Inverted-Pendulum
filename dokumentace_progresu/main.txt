@@ -65,6 +65,3 @@ changed the motor torque according to the measurements:
     <motor name="torque1" joint="joint1" gear="1" ctrlrange="-0.064 0.064"/>  # torque measured 8g over 0.08m rod equals 0.064 N-m
   </actuator>
 
-
-changed the reward function so that its smooth in state space
-helped a lot with keeping the balance smooth and not jitering
