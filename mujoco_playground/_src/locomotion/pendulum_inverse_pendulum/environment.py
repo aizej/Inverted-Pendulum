@@ -32,6 +32,8 @@ def default_config() -> config_dict.ConfigDict:
         ),
         obs_noise=config_dict.create(
             level=1.0,
+            observation_delay_max=0.005, #in seconds
+            observation_delay_min=0.000,
             scales=config_dict.create(
                 joint_pos=0.002,
                 joint_vel=0.2,
@@ -228,8 +230,9 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         #stacked = history[idx]
 
         
-        
-        r = info["lag_ratio"]
+        high = self._config.obs_noise.observation_delay_max / self._config.ctrl_dt
+        low = self._config.obs_noise.observation_delay_min  / self._config.ctrl_dt
+        r = info["lag_ratio"]*(high-low) + low
         stacked = r*history[idx] + (1-r)*history[idx-1]    
 
         return stacked.reshape(-1)
