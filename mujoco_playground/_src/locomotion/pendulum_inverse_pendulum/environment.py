@@ -279,7 +279,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
     def step(self, state, action):
         return self._step(state, action)
 
-    def upright_func(phi):
+    def upright_func(self, phi):
         return jp.cos(phi)
         #return -2*jp.abs(jp.sin(phi/2)) +1
 
