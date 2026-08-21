@@ -66,3 +66,5 @@ changed the motor torque according to the measurements:
   </actuator>
 
 
+changed the reward function so that its smooth in state space
+helped a lot with keeping the balance smooth and not jitering
