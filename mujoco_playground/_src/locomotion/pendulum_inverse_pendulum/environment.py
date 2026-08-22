@@ -30,10 +30,13 @@ def default_config() -> config_dict.ConfigDict:
                 continuity_cost=-0.1, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
             ),
         ),
+        perturbation_scale = 0.05,
+        perturbation_period_range = (1/500, 1/2),
+        torque_randomisation_ratio = 1.15,
         obs_noise=config_dict.create(
             level=1.0,
-            observation_delay_max=0.010, #in seconds
-            observation_delay_min=0.005,
+            observation_delay_max=0.005, #in seconds
+            observation_delay_min=0.000,
             scales=config_dict.create(
                 joint_pos=0.002,
                 joint_vel=0.2,
@@ -145,7 +148,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     def reset(self, rng):
         
-        rng, q_rng, v_rng, model_rng = jax.random.split(rng, 4)
+        rng, rng2, rng3, rng4, rng5, rng6, q_rng, v_rng, model_rng = jax.random.split(rng, 8)
 
         if self._config.task == "balance":
             base_qpos = self._upright_qpos
@@ -168,7 +171,14 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
             ctrl=jp.zeros(self._mjx_model.nu),
         )
 
-        info = {"lag_ratio" : jax.random.uniform(rng),"rng": rng, "step": jp.zeros(()), "model": model}
+        period_min, period_max = self._config.perturbation_freq_range  # e.g. (1, 500)
+        self.perturbation_freq = jax.random.uniform(rng2, minval=period_min, maxval=period_max)
+        self.perturbation_offset = jax.random.uniform(rng3)*2*jp.pi
+
+        self.torque_random_scale = jax.random.uniform(rng4,minval=1/self._config.torque_randomisation_ratio, maxval=1*self._config.torque_randomisation_ratio)
+
+
+        info = {"lag_ratio" : jax.random.uniform(rng5),"episode_stable_rng": rng6,"rng": rng, "step": jp.zeros(()), "model": model}
         first_raw = self._raw_obs(data, info)
         info["obs_history"] = jp.tile(first_raw, (self.HIST_LEN, 1))   # (HIST_LEN, obs_dim)
         metrics = {f"reward/{k}": jp.zeros(()) for k in self._config.reward_config.scales}
@@ -293,7 +303,10 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         return -2*jp.abs(jp.sin(phi/2)) +1
 
     def _step_impl(self, state, action, automatic_reset=False):
-        ctrl = jp.clip(action * self._config.action_scale, self._lowers, self._uppers)
+        
+        action = action * self.torque_random_scale
+        perturbation = self._uppers*self._config.perturbation_scale*jp.sin(self.perturbation_freq*state.info["step"] + self.perturbation_offset)
+        ctrl = jp.clip(action * self._config.action_scale, self._lowers, self._uppers) + perturbation
         model = state.info["model"]
         data = mjx_env.step(model, state.data, ctrl, self.n_substeps)
 
