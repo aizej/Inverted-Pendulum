@@ -25,7 +25,7 @@ def default_config() -> config_dict.ConfigDict:
         reward_config=config_dict.create(
             scales=config_dict.create(
                 upright=1.0,        # Tip height reward
-                control_cost=-0.02, # Penalize large torques
+                control_cost=-0.002, # Penalize large torques
                 velocity_cost=-0.002, # Penalize fast swinging
                 continuity_cost=-0.1, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
             ),
@@ -33,7 +33,7 @@ def default_config() -> config_dict.ConfigDict:
         obs_noise=config_dict.create(
             level=1.0,
             observation_delay_max=0.005, #in seconds
-            observation_delay_min=0.000,
+            observation_delay_min=0.001,
             scales=config_dict.create(
                 joint_pos=0.002,
                 joint_vel=0.2,
@@ -303,7 +303,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         upright_reward = (self.upright_func(phi0) + 2*self.upright_func(phi0 + phi1 + jp.pi ))/3
 
 
-        control_cost   = jp.sum(jp.square(action))/(self._uppers - self._lowers)
+        control_cost   = jp.sum(jp.square(ctrl))
         velocity_cost  = jp.sum(jp.square(data.qvel[self._joint_dqids]))
         continuity_cost = jp.sum(jp.square((ctrl - state.data.ctrl)/(self._uppers - self._lowers)))
         
