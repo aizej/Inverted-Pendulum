@@ -26,8 +26,8 @@ def default_config() -> config_dict.ConfigDict:
             scales=config_dict.create(
                 upright=1.0,        # Tip height reward
                 control_cost=-0.02, # Penalize large torques
-                velocity_cost=-0.004, # Penalize fast swinging
-                continuity_cost=-0.2, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
+                velocity_cost=-0.008, # Penalize fast swinging
+                continuity_cost=-0.4, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
             ),
         ),
         obs_noise=config_dict.create(
@@ -152,7 +152,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
             noise_scale = 0.2          # Small perturbation near upright
         else:
             base_qpos = self._hanging_qpos
-            noise_scale = 3.141/2           # Wider random start for swing-up
+            noise_scale = 0.1#3.141/2           # Wider random start for swing-up
 
         # Create the initial state
         qpos = base_qpos + jax.random.uniform(
