@@ -16,7 +16,7 @@ def default_config() -> config_dict.ConfigDict:
     return config_dict.create(
         ctrl_dt=0.02,           # control frequency
         sim_dt=0.002,           # physics frequency (10 substeps)
-        episode_length=250,     # 5 seconds per episode
+        episode_length=500,     # 5 seconds per episode
         action_repeat=1,
         action_scale=1.0,
         input_shape=8,          # 6-dimensional observation space
@@ -26,8 +26,8 @@ def default_config() -> config_dict.ConfigDict:
             scales=config_dict.create(
                 upright=1.0,        # Tip height reward
                 control_cost=-0.02, # Penalize large torques
-                velocity_cost=-0.008, # Penalize fast swinging
-                continuity_cost=-0.4, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
+                velocity_cost=-0.002, # Penalize fast swinging
+                continuity_cost=-0.1, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
             ),
         ),
         obs_noise=config_dict.create(
@@ -303,7 +303,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         upright_reward = (self.upright_func(phi0) + 2*self.upright_func(phi0 + phi1 + jp.pi ))/3
 
 
-        control_cost   = jp.sum(jp.square(action))
+        control_cost   = jp.sum(jp.square(action))/(self._uppers - self._lowers)
         velocity_cost  = jp.sum(jp.square(data.qvel[self._joint_dqids]))
         continuity_cost = jp.sum(jp.square((ctrl - state.data.ctrl)/(self._uppers - self._lowers)))
         
