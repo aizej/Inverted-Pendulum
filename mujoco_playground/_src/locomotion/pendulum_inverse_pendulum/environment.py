@@ -25,15 +25,15 @@ def default_config() -> config_dict.ConfigDict:
         reward_config=config_dict.create(
             scales=config_dict.create(
                 upright=1.0,        # Tip height reward
-                control_cost=-0.002, # Penalize large torques
-                velocity_cost=-0.002, # Penalize fast swinging
+                control_cost=-0.0005, # Penalize large torques
+                velocity_cost=-0.0001, # Penalize fast swinging
                 continuity_cost=-0.1, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
             ),
         ),
         obs_noise=config_dict.create(
             level=1.0,
-            observation_delay_max=0.005, #in seconds
-            observation_delay_min=0.001,
+            observation_delay_max=0.010, #in seconds
+            observation_delay_min=0.005,
             scales=config_dict.create(
                 joint_pos=0.002,
                 joint_vel=0.2,
@@ -93,7 +93,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     
     def randomize_model(self, rng,
-                        mass_randomisation=1.3,
+                        mass_randomisation=1.1,
                         damping_randomisation=1.5,
                         friction_randomisation=1.5,
                         armature_randomisation=1,
