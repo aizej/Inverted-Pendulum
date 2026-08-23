@@ -202,7 +202,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
             "torque_random_scale": torque_random_scale,
             "perturbation_w": 2*jp.pi/jax.random.uniform(pertur_phi_rng, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
             "perturbation_phi": jax.random.uniform(pertur_phi_rng, minval=0, maxval=2*jp.pi),
-            "torque_bias": jax.random.uniform(pertur_phi_rng, minval=0, maxval=self._config.torque_bias_scale)
+            "torque_bias": jax.random.uniform(pertur_phi_rng, minval=-self._config.torque_bias_scale, maxval=self._config.torque_bias_scale)
         }
         first_raw = self._raw_obs(data, info)
         info["obs_history"] = jp.tile(first_raw, (self.HIST_LEN, 1))   # (HIST_LEN, obs_dim)
