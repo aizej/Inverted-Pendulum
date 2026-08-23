@@ -32,13 +32,13 @@ def default_config() -> config_dict.ConfigDict:
         ),
         torque_randomisation_ratio = 1.15,
         torque_bias_scale = 0.2,
-        mass_randomisation = 1.3,
-        damping_randomisation=1.5,
-        friction_randomisation=1.5,
+        mass_randomisation = 2,
+        damping_randomisation=2,
+        friction_randomisation=2,
         armature_randomisation=1,
         gear_randomisation=1,
 
-        perturbation_force_scale = 0.01,
+        perturbation_force_scale = 0.02,
         perturbation_body = "link1_tip",  # "link1_tip" or "tip"
         perturbation_period_min = 5, #in steps
         perturbation_period_max = 100,
