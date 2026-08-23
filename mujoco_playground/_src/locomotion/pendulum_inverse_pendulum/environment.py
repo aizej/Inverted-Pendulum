@@ -25,14 +25,15 @@ def default_config() -> config_dict.ConfigDict:
         reward_config=config_dict.create(
             scales=config_dict.create(
                 upright=1.0,        # Tip height reward
-                control_cost=-0.0005, # Penalize large torques
-                velocity_cost=-0.0001, # Penalize fast swinging
+                control_cost=-0.001, # Penalize large torques
+                velocity_cost=-0.001, # Penalize fast swinging
                 continuity_cost=-0.1, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
             ),
         ),
-        perturbation_scale = 0.05,
-        perturbation_period_range = (1/500, 1/2),
         torque_randomisation_ratio = 1.15,
+        perturbation_scale = 0.05,
+        perturbation_period_min = 5, #in steps
+        perturbation_period_max = 100,
         obs_noise=config_dict.create(
             level=1.0,
             observation_delay_max=0.005, #in seconds
@@ -96,11 +97,11 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     
     def randomize_model(self, rng,
-                        mass_randomisation=1.1,
+                        mass_randomisation=1.3,
                         damping_randomisation=1.5,
                         friction_randomisation=1.5,
                         armature_randomisation=1,
-                        gear_randomisation=1.15):
+                        gear_randomisation=1):
         """Returns an mjx.Model with physical params uniformly scaled by
         [1-ratio, 1+ratio] around the values already in the loaded XML."""
         rng_mass, rng_damp, rng_fric, rng_arm, rng_gear = jax.random.split(rng, 5)
@@ -148,7 +149,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     def reset(self, rng):
         
-        rng, rng2, rng3, rng4, rng5, rng6, q_rng, v_rng, model_rng = jax.random.split(rng, )
+        rng, pertur_w_rng, pertur_phi_rng, gain_rng, q_rng, v_rng, model_rng = jax.random.split(rng, 7)
 
         if self._config.task == "balance":
             base_qpos = self._upright_qpos
@@ -166,6 +167,12 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         # Create randomized model for this episode
         model = self.randomize_model(model_rng)
 
+        torque_random_scale = jax.random.uniform(
+            gain_rng,
+            minval=1 / self._config.torque_randomisation_ratio,
+            maxval=self._config.torque_randomisation_ratio,
+        )
+
         data = mjx_env.make_data(
             self._mj_model, qpos=qpos, qvel=qvel,
             ctrl=jp.zeros(self._mjx_model.nu),
@@ -175,7 +182,15 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         
         
 
-        info = {"lag_ratio" : jax.random.uniform(rng5),"episode_stable_rng": rng6,"rng": rng, "step": jp.zeros(()), "model": model}
+        info = {
+            "lag_ratio": jax.random.uniform(rng),
+            "rng": rng,
+            "step": jp.zeros(()),
+            "model": model,
+            "torque_random_scale": torque_random_scale,
+            "perturbation_w": 2*jp.pi/jax.random.uniform(pertur_phi_rng, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
+            "perturbation_phi": jax.random.uniform(pertur_phi_rng, minval=0, maxval=2*jp.pi)
+        }
         first_raw = self._raw_obs(data, info)
         info["obs_history"] = jp.tile(first_raw, (self.HIST_LEN, 1))   # (HIST_LEN, obs_dim)
         metrics = {f"reward/{k}": jp.zeros(()) for k in self._config.reward_config.scales}
@@ -299,10 +314,18 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         #return jp.cos(phi)
         return -2*jp.abs(jp.sin(phi/2)) +1
 
-    def _step_impl(self, state, action, automatic_reset=False):
+    def _step_impl(self, state, action):
         
         
-        ctrl = jp.clip(action * self._config.action_scale, self._lowers, self._uppers)
+        perturbation = self._config.perturbation_scale*self._uppers*jp.sin(state.info["step"]*state.info["perturbation_w"] + state.info["perturbation_phi"])
+            
+        
+        ctrl = jp.clip(
+            action * self._config.action_scale * state.info["torque_random_scale"]
+            + perturbation,
+            self._lowers,
+            self._uppers,
+        )
         model = state.info["model"]
         data = mjx_env.step(model, state.data, ctrl, self.n_substeps)
 
