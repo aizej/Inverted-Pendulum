@@ -38,7 +38,7 @@ def default_config() -> config_dict.ConfigDict:
         armature_randomisation=1,
         gear_randomisation=1,
 
-        perturbation_scale = 0.15,
+        perturbation_scale = 0.2,
         perturbation_period_min = 5, #in steps
         perturbation_period_max = 100,
 
@@ -157,7 +157,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     def reset(self, rng):
         
-        rng, pertur_w_rng, pertur_phi_rng, gain_rng, q_rng, v_rng, model_rng = jax.random.split(rng, 7)
+        rng,lag_rng, torque_bias_rng, pertur_w_rng, pertur_phi_rng, gain_rng, q_rng, v_rng, model_rng = jax.random.split(rng, 9)
 
         if self._config.task == "balance":
             base_qpos = self._upright_qpos
@@ -195,14 +195,14 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         
 
         info = {
-            "lag_ratio": jax.random.uniform(rng),
+            "lag_ratio": jax.random.uniform(lag_rng),
             "rng": rng,
             "step": jp.zeros(()),
             "model": model,
             "torque_random_scale": torque_random_scale,
-            "perturbation_w": 2*jp.pi/jax.random.uniform(pertur_phi_rng, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
+            "perturbation_w": 2*jp.pi/jax.random.uniform(pertur_w_rng, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
             "perturbation_phi": jax.random.uniform(pertur_phi_rng, minval=0, maxval=2*jp.pi),
-            "torque_bias": jax.random.uniform(pertur_phi_rng, minval=-self._config.torque_bias_scale, maxval=self._config.torque_bias_scale)
+            "torque_bias": jax.random.uniform(torque_bias_rng, minval=-self._config.torque_bias_scale, maxval=self._config.torque_bias_scale)
         }
         first_raw = self._raw_obs(data, info)
         info["obs_history"] = jp.tile(first_raw, (self.HIST_LEN, 1))   # (HIST_LEN, obs_dim)
