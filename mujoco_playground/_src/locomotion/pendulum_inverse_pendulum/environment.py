@@ -38,7 +38,7 @@ def default_config() -> config_dict.ConfigDict:
         armature_randomisation=1,
         gear_randomisation=1,
 
-        perturbation_scale = 0.2,
+        perturbation_scale = 0.3,
         perturbation_period_min = 5, #in steps
         perturbation_period_max = 100,
 
