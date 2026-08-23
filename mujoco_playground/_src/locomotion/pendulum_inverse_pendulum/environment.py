@@ -31,14 +31,15 @@ def default_config() -> config_dict.ConfigDict:
             ),
         ),
         torque_randomisation_ratio = 1.15,
-        torque_bias_scale = 0.1,
+        torque_bias_scale = 0.2,
         mass_randomisation = 1.3,
         damping_randomisation=1.5,
         friction_randomisation=1.5,
         armature_randomisation=1,
         gear_randomisation=1,
 
-        perturbation_scale = 0.3,
+        perturbation_force_scale = 0.01,
+        perturbation_body = "link1_tip",  # "link1_tip" or "tip"
         perturbation_period_min = 5, #in steps
         perturbation_period_max = 100,
 
@@ -94,6 +95,9 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         self._joint_qids  = mjx_env.get_qpos_ids(self._mj_model, ["joint1", "joint2"])
         self._joint_dqids = mjx_env.get_qvel_ids(self._mj_model, ["joint1", "joint2"])
         self._tip_body_id = self._mj_model.body("tip").id
+        self._perturbation_body_id = self._mj_model.body(
+            self._config.perturbation_body
+        ).id
         self._lowers, self._uppers = self._mj_model.actuator_ctrlrange.T
 
         # Keyframe starting poses
@@ -330,17 +334,29 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
     def _step_impl(self, state, action):
         
         
-        perturbation = self._config.perturbation_scale*self._uppers*jp.sin(state.info["step"]*state.info["perturbation_w"] + state.info["perturbation_phi"])
+        perturbation = self._config.perturbation_force_scale * jp.sin(
+            state.info["step"] * state.info["perturbation_w"]
+            + state.info["perturbation_phi"]
+        )
         bias = state.info["torque_bias"]*self._uppers
 
         ctrl = jp.clip(
             action * self._config.action_scale * state.info["torque_random_scale"]
-            + perturbation + bias,
+            + bias,
             self._lowers,
             self._uppers,
         )
+
+
         model = state.info["model"]
-        data = mjx_env.step(model, state.data, ctrl, self.n_substeps)
+
+
+        xfrc_applied = jp.zeros((self._mjx_model.nbody, 6))
+        xfrc_applied = xfrc_applied.at[self._perturbation_body_id, :3].set(
+            jp.array([perturbation, 0.0, 0.0])
+        )
+        data = state.data.replace(xfrc_applied=xfrc_applied)
+        data = mjx_env.step(model, data, ctrl, self.n_substeps)
 
         
         phi0 = data.qpos[self._joint_qids[0]]
