@@ -31,9 +31,16 @@ def default_config() -> config_dict.ConfigDict:
             ),
         ),
         torque_randomisation_ratio = 1.15,
+        mass_randomisation = 1.3,
+        damping_randomisation=1.5,
+        friction_randomisation=1.5,
+        armature_randomisation=1,
+        gear_randomisation=1,
+
         perturbation_scale = 0.05,
         perturbation_period_min = 5, #in steps
         perturbation_period_max = 100,
+
         obs_noise=config_dict.create(
             level=1.0,
             observation_delay_max=0.005, #in seconds
@@ -97,11 +104,11 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     
     def randomize_model(self, rng,
-                        mass_randomisation=1.3,
-                        damping_randomisation=1.5,
-                        friction_randomisation=1.5,
-                        armature_randomisation=1,
-                        gear_randomisation=1):
+                        mass_randomisation,
+                        damping_randomisation,
+                        friction_randomisation,
+                        armature_randomisation,
+                        gear_randomisation):
         """Returns an mjx.Model with physical params uniformly scaled by
         [1-ratio, 1+ratio] around the values already in the loaded XML."""
         rng_mass, rng_damp, rng_fric, rng_arm, rng_gear = jax.random.split(rng, 5)
@@ -165,7 +172,11 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         qvel = jax.random.uniform(v_rng, (self._mjx_model.nv,), minval=-noise_scale, maxval=noise_scale)
 
         # Create randomized model for this episode
-        model = self.randomize_model(model_rng)
+        model = self.randomize_model(model_rng, mass_randomisation=self._config.mass_randomisation,
+                                                damping_randomisation=self._config.damping_randomisation,
+                                                friction_randomisation=self._config.friction_randomisation,
+                                                armature_randomisation=self._config.armature_randomisation,
+                                                gear_randomisation=self._config.gear_randomisation)
 
         torque_random_scale = jax.random.uniform(
             gain_rng,
