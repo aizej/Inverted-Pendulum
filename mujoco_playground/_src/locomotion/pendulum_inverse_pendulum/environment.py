@@ -31,13 +31,14 @@ def default_config() -> config_dict.ConfigDict:
             ),
         ),
         torque_randomisation_ratio = 1.15,
+        torque_bias_scale = 0.1,
         mass_randomisation = 1.3,
         damping_randomisation=1.5,
         friction_randomisation=1.5,
         armature_randomisation=1,
         gear_randomisation=1,
 
-        perturbation_scale = 0.05,
+        perturbation_scale = 0.15,
         perturbation_period_min = 5, #in steps
         perturbation_period_max = 100,
 
@@ -200,7 +201,8 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
             "model": model,
             "torque_random_scale": torque_random_scale,
             "perturbation_w": 2*jp.pi/jax.random.uniform(pertur_phi_rng, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
-            "perturbation_phi": jax.random.uniform(pertur_phi_rng, minval=0, maxval=2*jp.pi)
+            "perturbation_phi": jax.random.uniform(pertur_phi_rng, minval=0, maxval=2*jp.pi),
+            "torque_bias": jax.random.uniform(pertur_phi_rng, minval=0, maxval=self._config.torque_bias_scale)
         }
         first_raw = self._raw_obs(data, info)
         info["obs_history"] = jp.tile(first_raw, (self.HIST_LEN, 1))   # (HIST_LEN, obs_dim)
@@ -329,11 +331,11 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         
         
         perturbation = self._config.perturbation_scale*self._uppers*jp.sin(state.info["step"]*state.info["perturbation_w"] + state.info["perturbation_phi"])
-            
-        
+        bias = state.info["torque_bias"]*self._uppers
+
         ctrl = jp.clip(
             action * self._config.action_scale * state.info["torque_random_scale"]
-            + perturbation,
+            + perturbation + bias,
             self._lowers,
             self._uppers,
         )
