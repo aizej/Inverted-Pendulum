@@ -100,7 +100,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
                         damping_randomisation=1.5,
                         friction_randomisation=1.5,
                         armature_randomisation=1,
-                        gear_randomisation=1):
+                        gear_randomisation=1.15):
         """Returns an mjx.Model with physical params uniformly scaled by
         [1-ratio, 1+ratio] around the values already in the loaded XML."""
         rng_mass, rng_damp, rng_fric, rng_arm, rng_gear = jax.random.split(rng, 5)
@@ -148,7 +148,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     def reset(self, rng):
         
-        rng, rng2, rng3, rng4, rng5, rng6, q_rng, v_rng, model_rng = jax.random.split(rng, 8)
+        rng, rng2, rng3, rng4, rng5, rng6, q_rng, v_rng, model_rng = jax.random.split(rng, )
 
         if self._config.task == "balance":
             base_qpos = self._upright_qpos
@@ -171,12 +171,9 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
             ctrl=jp.zeros(self._mjx_model.nu),
         )
 
-        period_min, period_max = self._config.perturbation_freq_range  # e.g. (1, 500)
-        self.perturbation_freq = jax.random.uniform(rng2, minval=period_min, maxval=period_max)
-        self.perturbation_offset = jax.random.uniform(rng3)*2*jp.pi
 
-        self.torque_random_scale = jax.random.uniform(rng4,minval=1/self._config.torque_randomisation_ratio, maxval=1*self._config.torque_randomisation_ratio)
-
+        
+        
 
         info = {"lag_ratio" : jax.random.uniform(rng5),"episode_stable_rng": rng6,"rng": rng, "step": jp.zeros(()), "model": model}
         first_raw = self._raw_obs(data, info)
@@ -235,7 +232,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         info["obs_history"] = history
 
         
-        lags = jp.array([1])           # indexes of the history to return (0 = most recent, 1 = one step ago, etc.)
+        lags = jp.array([0])           # indexes of the history to return (0 = most recent, 1 = one step ago, etc.)
         idx = self.HIST_LEN - 1 - lags
         #stacked = history[idx]
 
@@ -243,7 +240,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
         high = self._config.obs_noise.observation_delay_max / self._config.ctrl_dt
         low = self._config.obs_noise.observation_delay_min  / self._config.ctrl_dt
         r = info["lag_ratio"]*(high-low) + low
-        stacked = r*history[idx] + (1-r)*history[idx-1]    
+        stacked = r*history[idx-1] + (1-r)*history[idx]    
 
         return stacked.reshape(-1)
 
@@ -304,9 +301,8 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     def _step_impl(self, state, action, automatic_reset=False):
         
-        action = action * self.torque_random_scale
-        perturbation = self._uppers*self._config.perturbation_scale*jp.sin(self.perturbation_freq*state.info["step"] + self.perturbation_offset)
-        ctrl = jp.clip(action * self._config.action_scale, self._lowers, self._uppers) + perturbation
+        
+        ctrl = jp.clip(action * self._config.action_scale, self._lowers, self._uppers)
         model = state.info["model"]
         data = mjx_env.step(model, state.data, ctrl, self.n_substeps)
 
