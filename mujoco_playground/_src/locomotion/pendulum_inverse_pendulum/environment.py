@@ -14,9 +14,9 @@ from mujoco import mjx
 
 def default_config() -> config_dict.ConfigDict:
     return config_dict.create(
-        ctrl_dt=0.002,           # control frequency
-        sim_dt=0.0002,           # physics frequency (10 substeps)
-        episode_length=2500,     # 5 seconds per episode
+        ctrl_dt=0.02,           # control frequency
+        sim_dt=0.002,           # physics frequency (10 substeps)
+        episode_length=500,     # 5 seconds per episode
         action_repeat=1,
         action_scale=1.0,
         input_shape=8,          # 6-dimensional observation space
@@ -27,7 +27,7 @@ def default_config() -> config_dict.ConfigDict:
                 upright=1.0,        # Tip height reward
                 control_cost=-0.001, # Penalize large torques
                 velocity_cost=-0.001, # Penalize fast swinging
-                continuity_cost=-0.2, # Penalize large changes in torque  (cant bee too high or the action will colapse to 0)
+                continuity_cost=-0.3, # Penalize large changes in torque  
             ),
         ),
         torque_randomisation_ratio = 1.15,
@@ -49,7 +49,7 @@ def default_config() -> config_dict.ConfigDict:
             observation_delay_min=0.000,
             scales=config_dict.create(
                 joint_pos=0.002,
-                joint_vel=0.2,
+                joint_vel=0.767,
             ),
         ),
         naconmax=50,
