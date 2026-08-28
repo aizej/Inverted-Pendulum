@@ -27,7 +27,7 @@ def default_config() -> config_dict.ConfigDict:
                 upright=1.0,        # Tip height reward
                 control_cost=-0.001, # Penalize large torques
                 velocity_cost=-0.0002, # Penalize fast swinging
-                continuity_cost=-0.1, # Penalize large changes in torque  
+                continuity_cost=-0.3, # Penalize large changes in torque  
             ),
         ),
         torque_randomisation_ratio = 1.15,
@@ -46,7 +46,7 @@ def default_config() -> config_dict.ConfigDict:
 
         obs_noise=config_dict.create(
             level=1.0,
-            observation_delay_max=0.001, #in seconds
+            observation_delay_max=0.002, #in seconds
             observation_delay_min=0.000,
             scales=config_dict.create(
                 joint_pos=0.002,
