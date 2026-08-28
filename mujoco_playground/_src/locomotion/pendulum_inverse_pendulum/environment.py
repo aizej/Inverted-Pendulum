@@ -45,7 +45,7 @@ def default_config() -> config_dict.ConfigDict:
 
         obs_noise=config_dict.create(
             level=1.0,
-            observation_delay_max=0.005, #in seconds
+            observation_delay_max=0.002, #in seconds
             observation_delay_min=0.000,
             scales=config_dict.create(
                 joint_pos=0.002,
