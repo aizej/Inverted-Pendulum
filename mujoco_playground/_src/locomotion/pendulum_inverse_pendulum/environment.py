@@ -38,7 +38,7 @@ def default_config() -> config_dict.ConfigDict:
         armature_randomisation=1,
         gear_randomisation=1,
 
-        perturbation_force_scale = 0.03,
+        perturbation_force_scale = 0.08,
         perturbation_body = "link1_tip",  # "link1_tip" or "tip"
         perturbation_period_min = 5, #in steps
         perturbation_period_max = 100,
