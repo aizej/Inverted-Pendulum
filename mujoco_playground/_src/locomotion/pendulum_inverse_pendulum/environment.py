@@ -39,10 +39,10 @@ def default_config() -> config_dict.ConfigDict:
         gear_randomisation=1,
 
         perturbation_force_link1_tip = 0.03,
-        perturbation_force_link2_tip = 0.0,
+        perturbation_force_link2_tip = 0.001,
         
         perturbation_period_min = 5, #in steps
-        perturbation_period_max = 500,
+        perturbation_period_max = 200,
 
         obs_noise=config_dict.create(
             level=1.0,
