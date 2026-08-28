@@ -39,7 +39,7 @@ def default_config() -> config_dict.ConfigDict:
         gear_randomisation=1,
 
         perturbation_force_link1_tip = 0.03,
-        perturbation_force_link2_tip = 0.001,
+        perturbation_force_link2_tip = 0.005,
         
         perturbation_period_min = 5, #in steps
         perturbation_period_max = 500,
