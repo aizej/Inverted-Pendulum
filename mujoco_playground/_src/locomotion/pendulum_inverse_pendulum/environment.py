@@ -38,14 +38,15 @@ def default_config() -> config_dict.ConfigDict:
         armature_randomisation=1,
         gear_randomisation=1,
 
-        perturbation_force_scale = 0.08,
-        perturbation_body = "link1_tip",  # "link1_tip" or "tip"
+        perturbation_force_link1_tip = 0.03,
+        perturbation_force_link2_tip = 0.001,
+        
         perturbation_period_min = 5, #in steps
-        perturbation_period_max = 100,
+        perturbation_period_max = 500,
 
         obs_noise=config_dict.create(
             level=1.0,
-            observation_delay_max=0.000, #in seconds
+            observation_delay_max=0.001, #in seconds
             observation_delay_min=0.000,
             scales=config_dict.create(
                 joint_pos=0.002,
@@ -94,10 +95,8 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
         self._joint_qids  = mjx_env.get_qpos_ids(self._mj_model, ["joint1", "joint2"])
         self._joint_dqids = mjx_env.get_qvel_ids(self._mj_model, ["joint1", "joint2"])
-        self._tip_body_id = self._mj_model.body("tip").id
-        self._perturbation_body_id = self._mj_model.body(
-            self._config.perturbation_body
-        ).id
+        self._link2_tip_body_id = self._mj_model.body("tip").id
+        self._link1_tip_body_id = self._mj_model.body("link1_tip").id
         self._lowers, self._uppers = self._mj_model.actuator_ctrlrange.T
 
         # Keyframe starting poses
@@ -161,7 +160,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     def reset(self, rng):
         
-        rng,lag_rng, torque_bias_rng, pertur_w_rng, pertur_phi_rng, gain_rng, q_rng, v_rng, model_rng = jax.random.split(rng, 9)
+        rng, lag_rng, torque_bias_rng, pertur_w_rng1, pertur_phi_rng1, pertur_w_rng2, pertur_phi_rng2, gain_rng, q_rng, v_rng, model_rng = jax.random.split(rng, 11)
 
         if self._config.task == "balance":
             base_qpos = self._upright_qpos
@@ -204,8 +203,10 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
             "step": jp.zeros(()),
             "model": model,
             "torque_random_scale": torque_random_scale,
-            "perturbation_w": 2*jp.pi/jax.random.uniform(pertur_w_rng, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
-            "perturbation_phi": jax.random.uniform(pertur_phi_rng, minval=0, maxval=2*jp.pi),
+            "perturbation_w1": 2*jp.pi/jax.random.uniform(pertur_w_rng1, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
+            "perturbation_phi1": jax.random.uniform(pertur_phi_rng1, minval=0, maxval=2*jp.pi),
+            "perturbation_w2": 2*jp.pi/jax.random.uniform(pertur_w_rng2, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
+            "perturbation_phi2": jax.random.uniform(pertur_phi_rng2, minval=0, maxval=2*jp.pi),
             "torque_bias": jax.random.uniform(torque_bias_rng, minval=-self._config.torque_bias_scale, maxval=self._config.torque_bias_scale)
         }
         first_raw = self._raw_obs(data, info)
@@ -334,10 +335,16 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
     def _step_impl(self, state, action):
         
         
-        perturbation = self._config.perturbation_force_scale * jp.sin(
-            state.info["step"] * state.info["perturbation_w"]
-            + state.info["perturbation_phi"]
+        perturbation_link1_tip = self._config.perturbation_force_link1_tip * jp.sin(
+            state.info["step"] * state.info["perturbation_w1"]
+            + state.info["perturbation_phi1"]
         )
+        perturbation_link2_tip = self._config.perturbation_force_link2_tip * jp.sin(
+            state.info["step"] * state.info["perturbation_w2"]
+            + state.info["perturbation_phi2"]
+        )
+
+
         bias = state.info["torque_bias"]*self._uppers
 
         ctrl = jp.clip(
@@ -352,9 +359,13 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
 
         xfrc_applied = jp.zeros((self._mjx_model.nbody, 6))
-        xfrc_applied = xfrc_applied.at[self._perturbation_body_id, :3].set(
-            jp.array([perturbation, 0.0, 0.0])
+        xfrc_applied = xfrc_applied.at[self._link1_tip_body_id, :3].set(
+            jp.array([perturbation_link1_tip, 0.0, 0.0])
         )
+        xfrc_applied = xfrc_applied.at[self._link2_tip_body_id, :3].set(
+                    jp.array([perturbation_link2_tip, 0.0, 0.0])
+                )
+
         data = state.data.replace(xfrc_applied=xfrc_applied)
         data = mjx_env.step(model, data, ctrl, self.n_substeps)
 
