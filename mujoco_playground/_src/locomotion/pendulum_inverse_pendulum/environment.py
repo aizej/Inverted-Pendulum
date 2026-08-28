@@ -33,8 +33,8 @@ def default_config() -> config_dict.ConfigDict:
         torque_randomisation_ratio = 1.15,
         torque_bias_scale = 0.2,
         mass_randomisation = 1.3,
-        damping_randomisation=2,
-        friction_randomisation=2,
+        damping_randomisation=1.3,
+        friction_randomisation=1.3,
         armature_randomisation=1,
         gear_randomisation=1,
 
