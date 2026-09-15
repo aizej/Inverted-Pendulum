@@ -58,29 +58,20 @@ The RL policy uses observations from the system and learns a balancing strategy 
 Video:
 [*Neural network control with reinforcement learning*](https://youtube.com/shorts/eyTFQ6OgbI4?feature=share)
 
-## Video and model files
 
-The project includes trained models and demonstration videos in the `models/` folder. These files are useful for:
-
-- replaying the learned behavior,
-- comparing control performance across methods,
-- reviewing the trained policy in action.
-
-GitHub also supports embedding local video files directly in the README, so you can add one or several videos without linking out to external pages.
-
-### Embedded demo video
+### Best model demo
 
 <div align="center">
-  <video src="models/replay_rollout_0_0.053.mp4" controls muted playsinline width="720"></video>
+  <video src="https://raw.githubusercontent.com/aizej/Inverted-Pendulum/master/models/replay_rollout_0_0.676.mp4" controls muted playsinline width="720"></video>
 </div>
 
-### More local videos
+### More demo videos
 
-- [replay_rollout_0_0.053.mp4](models/replay_rollout_0_0.053.mp4)
-- [replay_rollout_0_0.358.mp4](models/replay_rollout_0_0.358.mp4)
-- [replay_rollout_0_0.664.mp4](models/replay_rollout_0_0.664.mp4)
+- [Best model video (0.676)](https://raw.githubusercontent.com/aizej/Inverted-Pendulum/master/models/replay_rollout_0_0.676.mp4)
+- [Strong run (0.664)](https://raw.githubusercontent.com/aizej/Inverted-Pendulum/master/models/replay_rollout_0_0.664.mp4)
+- [Comparison run (0.358)](https://raw.githubusercontent.com/aizej/Inverted-Pendulum/master/models/replay_rollout_0_0.358.mp4)
 
-If you want to see the system in motion before reading the code, start with the videos in `models/` and then look through the training and simulation files.
+If you want to see the system in motion before reading the code, start with the best rollout above and then look through the training and simulation files.
 
 ## Electronics used
 
