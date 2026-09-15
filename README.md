@@ -59,12 +59,6 @@ Video:
 [*Neural network control with reinforcement learning*](https://youtube.com/shorts/eyTFQ6OgbI4?feature=share)
 
 
-### Best model demo
-
-<div align="center">
-  <video src="https://raw.githubusercontent.com/aizej/Inverted-Pendulum/master/models/replay_rollout_0_0.676.mp4" controls muted playsinline width="720"></video>
-</div>
-
 ### More demo videos
 
 - [Best model video (0.676)](https://raw.githubusercontent.com/aizej/Inverted-Pendulum/master/models/replay_rollout_0_0.676.mp4)
