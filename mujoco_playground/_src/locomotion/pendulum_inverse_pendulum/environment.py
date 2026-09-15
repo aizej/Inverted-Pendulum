@@ -17,6 +17,7 @@ def default_config() -> config_dict.ConfigDict:
         ctrl_dt=0.02,           # control frequency
         sim_dt=0.002,           # physics frequency (10 substeps)
         episode_length=500,     # 5 seconds per episode
+        episode_length_randomness = 100,
         action_repeat=1,
         action_scale=1.0,
         input_shape=8,          # 6-dimensional observation space
@@ -160,7 +161,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
     def reset(self, rng):
         
-        rng, lag_rng, torque_bias_rng, pertur_w_rng1, pertur_phi_rng1, pertur_w_rng2, pertur_phi_rng2, gain_rng, q_rng, v_rng, model_rng = jax.random.split(rng, 11)
+        rng, episode_length_rng, lag_rng, torque_bias_rng, pertur_w_rng1, pertur_phi_rng1, pertur_w_rng2, pertur_phi_rng2, gain_rng, q_rng, v_rng, model_rng = jax.random.split(rng, 12)
 
         if self._config.task == "balance":
             base_qpos = self._upright_qpos
@@ -207,7 +208,8 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
             "perturbation_phi1": jax.random.uniform(pertur_phi_rng1, minval=0, maxval=2*jp.pi),
             "perturbation_w2": 2*jp.pi/jax.random.uniform(pertur_w_rng2, minval=self._config.perturbation_period_min, maxval=self._config.perturbation_period_max),
             "perturbation_phi2": jax.random.uniform(pertur_phi_rng2, minval=0, maxval=2*jp.pi),
-            "torque_bias": jax.random.uniform(torque_bias_rng, minval=-self._config.torque_bias_scale, maxval=self._config.torque_bias_scale)
+            "torque_bias": jax.random.uniform(torque_bias_rng, minval=-self._config.torque_bias_scale, maxval=self._config.torque_bias_scale),
+            "episode_length_randomness": jax.random.uniform(episode_length_rng, minval=-self._config.episode_length_randomness, maxval=self._config.episode_length_randomness).astype(int)
         }
         first_raw = self._raw_obs(data, info)
         info["obs_history"] = jp.tile(first_raw, (self.HIST_LEN, 1))   # (HIST_LEN, obs_dim)
@@ -389,7 +391,7 @@ class DoublePendulumEnv(mjx_env.MjxEnv):
 
         done = jp.logical_or(
             jp.any(jp.isnan(data.qpos)),
-            state.info["step"] + 1 >= self._config.episode_length,
+            state.info["step"] + 1 >= self._config.episode_length + state.info["episode_length_randomness"],
         ).astype(jp.float32)
 
         info = {**state.info, "step": state.info["step"] + 1}
